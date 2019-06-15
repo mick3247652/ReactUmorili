@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Text, View, RefreshControl} from "react-native";
 import { connect } from "react-redux";
 import HTMLText from "react-htmltext";
 
@@ -9,9 +9,24 @@ import { Separator } from "../components/List";
 
 import { getPosts } from "../actions/posts";
 
+import {primaryColor} from '../config/colors'
+
 class Home extends Component {
-  componentWillMount() {
+
+  handleLoadPosts = () => {
+    if(this.props.isLoaded) return;
     this.props.dispatch(getPosts());
+    console.log('load posts from site')
+  }
+
+  handleOnRefresh = () => {
+    console.log('OnRefresh')
+    this.handleLoadPosts()
+  }
+
+  componentWillMount() {
+    this.handleLoadPosts()
+    
   }
 
   componentWillReceiveProps(nextProps) {
@@ -20,6 +35,10 @@ class Home extends Component {
       nextProps.currencyError !== this.props.currencyError
     ) {
       this.props.alertWithType("error", "Error", nextProps.currencyError);
+    }
+
+    if(!nextProps.isLoaded){
+      console.log('posts loaded')
     }
   }
 
@@ -37,6 +56,14 @@ class Home extends Component {
             )}
             keyExtractor={item => item.elementPureHtml}
             ItemSeparatorComponent={Separator}
+            refreshControl={
+              <RefreshControl
+                //refresh control used for the Pull to Refresh
+                progressBackgroundColor={primaryColor}
+                refreshing={this.props.isLoaded}
+                onRefresh={this.handleOnRefresh}
+              />
+            }
           />
         ) : (
           <Text>List is empty</Text>
@@ -49,7 +76,8 @@ class Home extends Component {
 const mapStateToProps = state => {
   return {
     posts: state.posts.posts,
-    postError: state.posts.error
+    postError: state.posts.error,
+    isLoaded: state.posts.isLoaded,
   };
 };
 
